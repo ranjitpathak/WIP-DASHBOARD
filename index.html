@@ -95,9 +95,32 @@
     .popover .popover-body { color:#111; }
 
     @media (max-width:1000px){
-      #filtersSidebar{position:relative;width:100%;height:auto;left:0;top:0;margin-bottom:12px;border-radius:10px}
+      #filtersSidebar{position:relative;width:100%;height:auto;left:0;top:0;margin-bottom:12px;border-radius:10px;margin-left:0;}
       #mainContent{margin-left:0;padding:12px}
       .charts-grid{grid-template-columns:1fr}
+      .brand{flex-wrap:wrap;align-items:flex-start;}
+      .top-controls{width:100%;justify-content:flex-start;}
+      .kpi-row{flex-direction:column;}
+      .kpi{min-width:auto;width:100%;}
+      .filter .controls{flex-direction:column;gap:6px;}
+      .filter .controls button{width:100%;}
+      .pivot-card{overflow-x:auto;}
+      .pivot-title{min-width:0;flex:1 1 auto;}
+    }
+
+    @media (max-width:768px) {
+      header{flex-direction:column;align-items:flex-start;gap:10px;}
+      .brand{gap:10px;}
+      .top-controls{margin-left:0;}
+      .metal-quick-wrap{flex-direction:column;align-items:flex-start;}
+      .charts-grid{gap:12px;}
+      .chart-card{padding:10px;}
+      .chart-card canvas{height:200px !important;}
+      .pivot-card{padding:10px;}
+      .detail-table th, .detail-table td{white-space:normal;}
+      .detail-table{min-width:100%;}
+      .modal-dialog{margin:0.5rem;max-width:100%;}
+      .modal-content{height:auto;}
     }
 
     /* detail modal compact styles */
