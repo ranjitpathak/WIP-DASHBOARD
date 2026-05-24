@@ -93,13 +93,39 @@
     /* popover */
     .popover { max-width: 360px; font-size:13px; }
     .popover .popover-body { color:#111; }
+    .mobile-only { display:none; }
 
     @media (max-width:1000px){
-      #filtersSidebar{position:relative;width:100%;height:auto;left:0;top:0;margin-bottom:12px;border-radius:10px;margin-left:0;}
+      #filtersSidebar{
+        position:fixed;
+        top:0;
+        left:0;
+        width:100%;
+        height:100%;
+        margin-bottom:0;
+        border-radius:0;
+        background:var(--card);
+        transform:translateX(-100%);
+        transition:transform .22s ease;
+        box-shadow:0 0 0 100vw rgba(0,0,0,0.35);
+        z-index:1250;
+      }
+      body.filters-open #filtersSidebar { transform: translateX(0); }
+      #filtersOverlay {
+        position:fixed;
+        inset:0;
+        background:rgba(0,0,0,0.35);
+        opacity:0;
+        pointer-events:none;
+        transition:opacity .22s ease;
+        z-index:1240;
+      }
+      body.filters-open #filtersOverlay { opacity:1; pointer-events:auto; }
+      .mobile-only { display:inline-flex; }
       #mainContent{margin-left:0;padding:12px}
       .charts-grid{grid-template-columns:1fr}
       .brand{flex-wrap:wrap;align-items:flex-start;}
-      .top-controls{width:100%;justify-content:flex-start;}
+      .top-controls{width:100%;justify-content:flex-start;gap:8px;flex-wrap:wrap;}
       .kpi-row{flex-direction:column;}
       .kpi{min-width:auto;width:100%;}
       .filter .controls{flex-direction:column;gap:6px;}
@@ -291,6 +317,7 @@
       <button id="clearAllFiltersSidebar" class="btn btn-sm btn-outline-secondary" style="flex:1">Clear all</button>
     </div>
   </aside>
+  <div id="filtersOverlay"></div>
 
   <!-- Main content -->
   <main id="mainContent">
@@ -304,6 +331,7 @@
       </div>
 
       <div class="top-controls">
+        <button id="mobileFilterToggle" class="btn btn-outline-secondary btn-sm mobile-only">Filters</button>
         <!-- Clear all filters moved to top as requested -->
         <button id="clearAllTop" class="btn btn-outline-secondary btn-sm">Clear all filters</button>
       </div>
@@ -1349,6 +1377,16 @@
       modalEl.addEventListener('shown.bs.modal', onModalShow);
       modalEl.addEventListener('hide.bs.modal', onModalHide);
       modalEl.addEventListener('hidden.bs.modal', onModalHide);
+    }
+
+    const mobileFilterBtn = document.getElementById('mobileFilterToggle');
+    const filtersOverlay = document.getElementById('filtersOverlay');
+    function closeMobileFilters(){ document.body.classList.remove('filters-open'); }
+    if(mobileFilterBtn){
+      mobileFilterBtn.addEventListener('click', function(){ document.body.classList.toggle('filters-open'); });
+    }
+    if(filtersOverlay){
+      filtersOverlay.addEventListener('click', closeMobileFilters);
     }
 
     // Handle window resize while modal is open
