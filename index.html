@@ -105,9 +105,9 @@
         margin-bottom:0;
         border-radius:0;
         background:var(--card);
-        transform:translateX(-100%);
+        transform:translateX(-105%);
         transition:transform .22s ease;
-        box-shadow:0 0 0 100vw rgba(0,0,0,0.35);
+        box-shadow:0 20px 60px rgba(0,0,0,0.12);
         z-index:1250;
       }
       body.filters-open #filtersSidebar { transform: translateX(0); }
@@ -115,12 +115,14 @@
         position:fixed;
         inset:0;
         background:rgba(0,0,0,0.35);
+        display:none;
         opacity:0;
         pointer-events:none;
         transition:opacity .22s ease;
         z-index:1240;
       }
-      body.filters-open #filtersOverlay { opacity:1; pointer-events:auto; }
+      body.filters-open #filtersOverlay { display:block; opacity:1; pointer-events:auto; }
+      body.filters-open { overflow:hidden; }
       .mobile-only { display:inline-flex; }
       #mainContent{margin-left:0;padding:12px}
       .charts-grid{grid-template-columns:1fr}
@@ -215,7 +217,10 @@
 <body>
   <!-- Sidebar -->
   <aside id="filtersSidebar" aria-label="Filters">
-    <h4>Filters</h4>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <h4 style="margin:0">Filters</h4>
+      <button id="mobileFilterClose" type="button" class="btn-close mobile-only" aria-label="Close filters" style="margin-top:0"></button>
+    </div>
 
     <div class="sidebar-section">
       <div class="filter">
@@ -1381,12 +1386,17 @@
 
     const mobileFilterBtn = document.getElementById('mobileFilterToggle');
     const filtersOverlay = document.getElementById('filtersOverlay');
+    const mobileFilterClose = document.getElementById('mobileFilterClose');
     function closeMobileFilters(){ document.body.classList.remove('filters-open'); }
+    function openMobileFilters(){ document.body.classList.add('filters-open'); }
     if(mobileFilterBtn){
       mobileFilterBtn.addEventListener('click', function(){ document.body.classList.toggle('filters-open'); });
     }
     if(filtersOverlay){
       filtersOverlay.addEventListener('click', closeMobileFilters);
+    }
+    if(mobileFilterClose){
+      mobileFilterClose.addEventListener('click', closeMobileFilters);
     }
 
     // Handle window resize while modal is open
