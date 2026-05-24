@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>BNM KPI Dashboard — WIP Only</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+
+  <!-- Local Font Awesome -->
+  <link rel="stylesheet" href="css/all.min.css">
+  <!-- Local Bootstrap -->
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+
+  <style>
+    :root{
+      --bg:#f4f6fb; --card:#ffffff; --muted:#6b7280; --accent1:#0ea5a4; --accent2:#3b82f6; --text:#0b1220; --border:rgba(2,6,23,0.06);
+      --icon-bg:#f3f4f6;
+      --orders-color:#2563eb; --netwt-color:#374151; --purewt-color:#f59e0b; --dwt-color:#06b6d4; --cswt-color:#7c3aed;
+    }
+    html,body{height:100%;margin:0}
+    body{
+      font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+      background: linear-gradient(180deg,var(--bg) 0%, #ffffff 60%);
+      color:var(--text); -webkit-font-smoothing:antialiased;
+    }
+
+    /* Sidebar */
+    #filtersSidebar{
+      position:fixed; top:12px; left:12px; width:300px; bottom:12px;
+      background:var(--card); border:1px solid var(--border); border-radius:12px;
+      padding:12px; overflow:auto; box-shadow:0 10px 30px rgba(2,6,23,0.06); z-index:1100;
+      transition: transform .22s ease, opacity .22s ease;
+    }
+    #filtersSidebar h4{margin:0 0 8px 0;font-size:16px}
+    .sidebar-section{margin-bottom:12px}
+    .filter{background:transparent;padding:6px 0;border-radius:8px}
+    .filter .title{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+    .filter .search{width:100%;padding:6px 8px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);margin-bottom:6px}
+    .filter select{width:100%;height:90px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);padding:6px;font-size:13px}
+    .filter .controls{display:flex;gap:6px;margin-top:6px}
+    .filter .controls button{flex:1;padding:6px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);background:transparent;color:var(--muted);cursor:pointer}
+
+    /* Main content */
+    #mainContent{ margin-left:336px; padding:18px; transition: margin-left .22s ease; }
+
+    header{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo-img{width:48px;height:48px;border-radius:10px;object-fit:contain;display:block}
+    h1{margin:0;font-size:18px}
+    .subtitle{font-size:12px;color:var(--muted);margin-top:2px}
+    .top-controls{margin-left:auto;display:flex;gap:10px;align-items:center}
+
+    .kpi-row{display:flex;gap:12px;margin-top:6px;flex-wrap:wrap}
+    .kpi{
+      background:var(--card); border-radius:10px; padding:10px 12px; min-width:180px;
+      border:1px solid var(--border); display:flex; gap:12px; align-items:center;
+      box-shadow:0 6px 18px rgba(11,18,32,0.03);
+    }
+    .kpi .icon-box{ width:44px;height:44px;border-radius:8px;background:linear-gradient(180deg,#fff,var(--icon-bg));display:flex;align-items:center;justify-content:center;font-size:18px;color:#000;flex-shrink:0;border:1px solid rgba(11,18,32,0.04); }
+    .kpi .text{display:flex;flex-direction:column;min-width:0}
+    .kpi .label{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .kpi .value{font-size:18px;font-weight:800;margin-top:6px;white-space:nowrap}
+    .kpi .sub{font-size:12px;color:var(--muted);margin-top:6px}
+
+    .kpi.orders .icon-box{ background: linear-gradient(180deg, rgba(37,99,235,0.12), rgba(37,99,235,0.06)); color:var(--orders-color); }
+    .kpi.netwt .icon-box{ background: linear-gradient(180deg, rgba(55,65,81,0.10), rgba(55,65,81,0.04)); color:var(--netwt-color); }
+    .kpi.purewt .icon-box{ background: linear-gradient(180deg, rgba(245,158,11,0.12), rgba(245,158,11,0.04)); color:var(--purewt-color); }
+    .kpi.dwt .icon-box{ background: linear-gradient(180deg, rgba(6,182,212,0.12), rgba(6,182,212,0.04)); color:var(--dwt-color); }
+    .kpi.csw .icon-box{ background: linear-gradient(180deg, rgba(124,58,237,0.12), rgba(124,58,237,0.04)); color:var(--cswt-color); }
+
+    .kpi.metal{ background: linear-gradient(135deg,#facc15,#f59e0b); color:#1a1a1a; }
+    .kpi.metal .icon-box{ background: rgba(255,255,255,0.28); color:#1a1a1a; }
+
+    .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px}
+    .chart-card{background:var(--card);border-radius:12px;padding:12px;border:1px solid var(--border);min-height:240px;display:flex;flex-direction:column;box-shadow:0 6px 18px rgba(11,18,32,0.03)}
+    .chart-card canvas{width:100% !important;height:220px !important;display:block}
+
+    /* pivot */
+    .pivot-card{ background:linear-gradient(90deg,#fff 0%, #fbfbff 100%); border-radius:10px;padding:12px;border:1px solid rgba(2,6,23,0.04); box-shadow:0 8px 24px rgba(2,6,23,0.04); margin-top:18px; }
+    .pivot-wrap{display:flex;justify-content:center;align-items:flex-start;padding:6px;background:transparent;overflow:auto}
+    .pivot-table{ width: min(80%, 980px); min-width:320px; border-collapse:collapse; font-size:13px; color:var(--text); table-layout:auto; }
+    .pivot-table th,.pivot-table td{border:1px solid rgba(11,18,32,0.04);padding:8px 10px;text-align:right;background:transparent}
+    .pivot-table th{background:rgba(255,255,255,0.95);text-align:left;color:var(--muted);position:sticky;top:0;z-index:2}
+    .pivot-row-header{text-align:left;color:#0b1220;font-weight:700;white-space:nowrap;cursor:pointer}
+
+    /* metal quick toggle */
+    .metal-quick-wrap{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+    .metal-quick-btn{padding:6px 10px;font-size:13px;border-radius:8px;border:1px solid rgba(11,18,32,0.06);background:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+    .metal-quick-btn.active{background:#1f6feb;color:#fff;border-color:transparent;box-shadow:0 6px 18px rgba(31,111,235,0.12)}
+
+    /* popover */
+    .popover { max-width: 360px; font-size:13px; }
+    .popover .popover-body { color:#111; }
+
+    @media (max-width:1000px){
+      #filtersSidebar{position:relative;width:100%;height:auto;left:0;top:0;margin-bottom:12px;border-radius:10px}
+      #mainContent{margin-left:0;padding:12px}
+      .charts-grid{grid-template-columns:1fr}
+    }
+
+    /* detail modal compact styles */
+    .detail-table { border-collapse: collapse; width: max-content; min-width: 100%; font-size: 13px; color: #0b1220; table-layout: auto; }
+    .detail-table th, .detail-table td { border: 1px solid rgba(11,18,32,0.06); padding: 8px 10px; vertical-align: middle; white-space: nowrap; }
+    .detail-table th { background: #fff; color: #374151; font-weight: 700; font-size: 13px; position: sticky; top: 0; z-index: 8; text-align: left; }
+    .detail-table tbody tr:nth-child(even) td { background: rgba(2,6,23,0.02); }
+    .detail-table td { text-align: left; }
+    .detail-table.compact { font-size: 12px; }
+    .detail-table.compact th, .detail-table.compact td { padding: 6px 8px; }
+    .detail-table.comfortable { font-size: 13px; }
+    .detail-table.comfortable th, .detail-table.comfortable td { padding: 10px 12px; }
+    .detail-table tbody tr:hover td { background: rgba(59,130,246,0.04); }
+    .density-toggle { display:inline-flex; gap:8px; align-items:center; }
+    .density-toggle button { padding:6px 8px; font-size:12px; border-radius:6px; border:1px solid rgba(11,18,32,0.06); background:#fff; cursor:pointer; }
+    .density-toggle button.active { background:#111827; color:#fff; border-color:transparent; }
+    #detailTopScroll { background: transparent; display:none; overflow-x:auto; overflow-y:hidden; padding:6px 12px; border-bottom:1px solid rgba(0,0,0,0.04); z-index:7; }
+    #detailTopScrollInner { height:1px; }
+
+    /* Ensure modal/backdrop are above the sidebar */
+    .modal-backdrop.show { z-index: 1150 !important; }
+    .modal { z-index: 1160 !important; }
+    .modal-dialog { z-index: 1161 !important; }
+
+    /* On small screens, hide/move the sidebar while modal is open */
+    @media (max-width: 1000px) {
+      #filtersSidebar.sidebar-hidden-for-modal {
+        transform: translateX(-112%);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform .22s ease, opacity .18s ease;
+      }
+      body.sidebar-hidden-for-modal #mainContent { margin-left: 12px !important; }
+    }
+
+    /* One-line note style */
+    .metal-note { font-size:13px; color:var(--muted); margin-left:6px; display:flex; align-items:center; gap:8px; }
+    .metal-note .note-text { white-space:nowrap; text-transform:none; }
+
+    /* Thumbnail styles for details table */
+    .detail-thumb {
+      width: 64px;
+      height: 48px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid rgba(0,0,0,0.06);
+      box-shadow: 0 6px 18px rgba(11,18,32,0.04);
+      cursor: pointer;
+    }
+    .detail-thumb-wrap { display:flex; align-items:center; gap:8px; }
+    .detail-thumb-filename { font-size:12px; color:#374151; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .placeholder-icon{ width:64px; height:48px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; border:1px dashed rgba(0,0,0,0.06); color:#6b7280; background:#fff; }
+    .open-link{ font-size:12px; margin-left:8px; }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside id="filtersSidebar" aria-label="Filters">
+    <h4>Filters</h4>
+
+    <div class="sidebar-section">
+      <div class="filter">
+        <div class="title"><span>CustomerCode</span><span class="badge" id="custCount">0</span></div>
+        <input class="search" id="customerSearch" placeholder="Search customers..." />
+        <select id="customerFilterInput" multiple></select>
+        <div class="controls">
+          <button data-target="#customerFilterInput" class="select-all btn btn-sm btn-light">Select all</button>
+          <button data-target="#customerFilterInput" class="clear-all btn btn-sm btn-light">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="filter">
+        <div class="title"><span>MFG-BY</span><span class="badge" id="mfgByCount">0</span></div>
+        <input class="search" id="mfgBySearch" placeholder="Search MFG-BY..." />
+        <select id="mfgByFilterInput" multiple></select>
+        <div class="controls">
+          <button data-target="#mfgByFilterInput" class="select-all btn btn-sm btn-light">Select all</button>
+          <button data-target="#mfgByFilterInput" class="clear-all btn btn-sm btn-light">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="filter">
+        <div class="title"><span>MFG-NAME</span><span class="badge" id="mfgNameCount">0</span></div>
+        <input class="search" id="mfgNameSearch" placeholder="Search MFG-NAME..." />
+        <select id="mfgNameFilterInput" multiple></select>
+        <div class="controls">
+          <button data-target="#mfgNameFilterInput" class="select-all btn btn-sm btn-light">Select all</button>
+          <button data-target="#mfgNameFilterInput" class="clear-all btn btn-sm btn-light">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="filter">
+        <div class="title"><span>ORDER TYPE</span><span class="badge" id="orderTypeCount">0</span></div>
+        <input class="search" id="orderTypeSearch" placeholder="Search order types..." />
+        <select id="orderTypeFilterInput" multiple></select>
+        <div class="controls">
+          <button data-target="#orderTypeFilterInput" class="select-all btn btn-sm btn-light">Select all</button>
+          <button data-target="#orderTypeFilterInput" class="clear-all btn btn-sm btn-light">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="filter">
+        <div class="title"><span>STAGE</span><span class="badge" id="stageCount">0</span></div>
+        <input class="search" id="stageSearch" placeholder="Search stages..." />
+        <select id="stageFilterInput" multiple></select>
+        <div class="controls">
+          <button data-target="#stageFilterInput" class="select-all btn btn-sm btn-light">Select all</button>
+          <button data-target="#stageFilterInput" class="clear-all btn btn-sm btn-light">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="filter">
+        <div class="title"><span>ORD-CHANNEL</span><span class="badge" id="channelCount">0</span></div>
+        <input class="search" id="channelSearch" placeholder="Search channels..." />
+        <select id="channelFilterInput" multiple></select>
+        <div class="controls">
+          <button data-target="#channelFilterInput" class="select-all btn btn-sm btn-light">Select all</button>
+          <button data-target="#channelFilterInput" class="clear-all btn btn-sm btn-light">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="filter">
+        <div class="title"><span>PO30+</span><span class="badge" id="po30Count">0</span></div>
+        <input class="search" id="po30Search" placeholder="Search PO30+..." />
+        <select id="po30FilterInput" multiple></select>
+        <div class="controls">
+          <button data-target="#po30FilterInput" class="select-all btn btn-sm btn-light">Select all</button>
+          <button data-target="#po30FilterInput" class="clear-all btn btn-sm btn-light">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="filter">
+        <div class="title"><span>MTL40+</span><span class="badge" id="mtl40Count">0</span></div>
+        <input class="search" id="mtl40Search" placeholder="Search MTL40+..." />
+        <select id="mtl40FilterInput" multiple></select>
+        <div class="controls">
+          <button data-target="#mtl40FilterInput" class="select-all btn btn-sm btn-light">Select all</button>
+          <button data-target="#mtl40FilterInput" class="clear-all btn btn-sm btn-light">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button id="clearAllFiltersSidebar" class="btn btn-sm btn-outline-secondary" style="flex:1">Clear all</button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main id="mainContent">
+    <header>
+      <div class="brand">
+        <img src="images/mylogo.png" alt="Logo" class="logo-img" />
+        <div>
+          <h1>WIP KPI Dashboard</h1>
+          <div class="subtitle">NetWt / PureWt shown in grams; subtext shows kg</div>
+        </div>
+      </div>
+
+      <div class="top-controls">
+        <!-- Clear all filters moved to top as requested -->
+        <button id="clearAllTop" class="btn btn-outline-secondary btn-sm">Clear all filters</button>
+      </div>
+    </header>
+
+    <!-- Metal KPI quick toggle (one-line note, normal case) -->
+    <div style="display:flex;align-items:center;gap:8px;margin-left:6px;margin-bottom:6px">
+      <button id="toggleMetalQuick" class="metal-quick-btn" title="Toggle quick exclude for Metal KPI">
+        <i class="fa-solid fa-filter"></i>
+        <span id="toggleMetalLabel">Apply quick exclude (Metal KPI)</span>
+      </button>
+      <div class="metal-note">
+        <span class="note-text"><strong>Note:</strong> Excludes for Metal KPI calculation — CustomerCode: s017, s145; ORDER TYPE: stock</span>
+      </div>
+    </div>
+
+    <div class="kpi-row" id="kpiRow">
+      <div class="kpi orders" role="group" aria-label="Total Orders">
+        <div class="icon-box"><i class="fa-solid fa-clipboard-list"></i></div>
+        <div class="text">
+          <div class="label">Total Orders (CategoryGrp)</div>
+          <div class="value" id="kpiOrders">0</div>
+          <div class="sub" id="kpiOrdersSub">Orders count</div>
+        </div>
+      </div>
+
+      <div class="kpi netwt" role="group" aria-label="Total Net Weight">
+        <div class="icon-box"><i class="fa-solid fa-scale-balanced"></i></div>
+        <div class="text">
+          <div class="label">Total Net Weight</div>
+          <div class="value" id="kpiNetWt">0 g</div>
+          <div class="sub" id="kpiNetWtUnits">0 kg</div>
+        </div>
+      </div>
+
+      <div class="kpi purewt" role="group" aria-label="Total Pure Weight">
+        <div class="icon-box"><i class="fa-solid fa-weight-hanging"></i></div>
+        <div class="text">
+          <div class="label">Total Pure Weight</div>
+          <div class="value" id="kpiPureWt">0 g</div>
+          <div class="sub" id="kpiPureWtUnits">0 kg</div>
+        </div>
+      </div>
+
+      <div class="kpi dwt" role="group" aria-label="Total DWt">
+        <div class="icon-box"><i class="fa-solid fa-gem"></i></div>
+        <div class="text">
+          <div class="label">Total DWt</div>
+          <div class="value" id="kpiDWt">0</div>
+          <div class="sub" id="kpiDWtSub">Carats</div>
+        </div>
+      </div>
+
+      <div class="kpi csw" role="group" aria-label="Total CSWt">
+        <div class="icon-box"><i class="fa-solid fa-certificate"></i></div>
+        <div class="text">
+          <div class="label">Total CSWt</div>
+          <div class="value" id="kpiCSWt">0</div>
+          <div class="sub" id="kpiCSWtSub">Carats</div>
+        </div>
+      </div>
+
+      <div class="kpi metal" role="group" aria-label="Ord Expected Metal PureWt" style="min-width:240px;">
+        <div class="icon-box"><i class="fa-solid fa-box"></i></div>
+        <div class="text">
+          <div class="label">Ord Expected Metal PureWt</div>
+          <div class="value" id="kpiMetalPureWt" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-html="true" title="Metal PureWt breakdown">0</div>
+          <div class="sub" id="kpiMetalPureWtSub">Default: 1_ISS &amp; 2_CAD OK</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WIP charts -->
+    <div id="tabs" class="mt-3">
+      <ul class="nav nav-tabs" role="tablist" id="mainTabList">
+        <li class="nav-item"><button class="nav-link active" data-index="0" data-bs-toggle="tab" data-bs-target="#tab-wip">WIP</button></li>
+      </ul>
+
+      <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-wip">
+          <div class="charts-grid">
+            <div class="chart-card"><h3>Orders by Stage</h3><canvas id="ordersByStage"></canvas></div>
+            <div class="chart-card"><h3>Diamond Weight by Stage</h3><canvas id="dwByStage"></canvas></div>
+            <div class="chart-card"><h3>Total Net Weight by Stage</h3><canvas id="netWtByStage"></canvas></div>
+            <div class="chart-card"><h3>DWt vs CSWt by Brand</h3><canvas id="dwVsCsByBrand"></canvas></div>
+            <div class="chart-card"><h3>Orders by Customer (WIP)</h3><canvas id="ordersByCustomerWip"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom summary -->
+    <div class="pivot-card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div class="pivot-title" style="font-weight:700">WIP Summary</div>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <select id="summarySelector" class="form-select form-select-sm" style="width:auto;">
+            <option value="customer" selected>CustomerCode × Stage</option>
+            <option value="mfg">MFG-NAME × Stage</option>
+          </select>
+          <select id="metricSelector" class="form-select form-select-sm" style="width:auto;">
+            <option value="CategoryGrp" selected>CatGrp (sum)</option>
+            <option value="NetWt">NetWt</option>
+            <option value="CSWt">CSWt</option>
+            <option value="DWt">DWt</option>
+          </select>
+          <div style="display:flex;gap:6px">
+            <button id="togglePivot" class="btn btn-sm btn-outline-secondary">Collapse</button>
+            <button id="downloadPivot" class="btn btn-sm btn-outline-secondary">Export CSV</button>
+          </div>
+        </div>
+      </div>
+      <div id="pivotContainer" class="pivot-wrap">Loading...</div>
+    </div>
+  </main>
+
+  <!-- Detail modal -->
+  <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header" style="align-items:center;gap:12px">
+          <div style="display:flex;flex-direction:column">
+            <h5 class="modal-title" id="detailModalTitle">Details</h5>
+            <small id="detailModalSubtitle" style="color:#6b7280;font-size:12px">Filtered: excludes s017, s145 & ORDER TYPE stock</small>
+          </div>
+
+          <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+            <div class="density-toggle" title="Toggle row density">
+              <button id="densityComfort" class="active">Comfort</button>
+              <button id="densityCompact">Compact</button>
+            </div>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:#374151">
+              <input id="detailFilterCat1" type="checkbox" checked style="transform:scale(1.05)"/>
+              <span>Only CategoryGrp = 1</span>
+            </label>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+        </div>
+
+        <div id="detailTopScroll" aria-hidden="true">
+          <div id="detailTopScrollInner"></div>
+        </div>
+
+        <div class="modal-body p-2" style="padding-top:0;">
+          <div id="detailTableWrap" class="detail-table-wrap" style="overflow:auto; max-height:65vh; padding:8px;"></div>
+        </div>
+
+        <div class="modal-footer">
+          <button id="downloadDetailCsv" class="btn btn-outline-secondary btn-sm">Download CSV</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image preview modal (used by thumbnails) -->
+  <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title">Image preview</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center p-2">
+          <img id="previewImg" alt="preview" style="max-width:100%; max-height:70vh; display:none; border-radius:6px; box-shadow:0 6px 18px rgba(0,0,0,0.08)" />
+          <div id="previewError" class="text-muted small" style="display:none; margin-top:8px;">
+            Preview blocked or not available in this browser. Open file in Explorer:
+          </div>
+          <a id="previewLink" class="btn btn-sm btn-outline-secondary mt-2" style="display:none" target="_blank" rel="noopener">Open in Explorer</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CDN JS libs -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <!-- Keep IMAGE_BASE_URL empty to avoid building HTTP URLs for UNC paths -->
+  <script>window.IMAGE_BASE_URL = '';</script>
+
+  <script>
+/*
+  Baseline v1 — createThumbCell adjusted to only provide an Open button fallback.
+  Thumbnails are not attempted for http(s) pages; Open button copies file:// path if direct open is blocked.
+*/
+
+(function(){
+  // Data store
+  window.dataStore = { wip: [] };
+  const palette = ["#2563eb","#059669","#f59e0b","#ef4444","#7c3aed","#06b6d4","#10b981","#f97316"];
+
+  // Metal quick-exclude flag and exclusions
+  window.metalQuickExcludeActive = false;
+  const METAL_EXCLUDE_CUSTOMERS = ['s017','s145'];
+  const METAL_EXCLUDE_ORDER_TYPES = ['stock'];
+  const DEFAULT_METAL_STAGES = ['1_ISS','2_CAD OK'];
+
+  // Utilities
+  function parseFloatSafe(v){ if(v==null || v==='') return 0; const n = parseFloat(String(v).replace(/,/g,'')); return isNaN(n)?0:n; }
+  function parseIntSafe(v){ if(v==null || v==='') return 0; const s = String(v).trim().replace(/[^\d\-\.]/g,''); const n = parseFloat(s); return isNaN(n) ? 0 : Math.round(n); }
+  function formatNumber(n,dec=2){ return Number(n).toLocaleString(undefined,{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
+  function formatInt(n){ return Number(n).toLocaleString(); }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  function debounce(fn, wait){ let t; return function(){ const args = arguments; clearTimeout(t); t = setTimeout(()=>fn.apply(this,args), wait); }; }
+
+  // -------------------------
+  // Image path helpers (Open button only; no thumbnail attempts for http(s))
+  // -------------------------
+  function _encodePathSegments(path) {
+    return path.split('/').map(s => encodeURIComponent(s)).join('/');
+  }
+
+  function _uncToFileUrl(unc) {
+    if (!unc) return '';
+    let s = String(unc).trim().replace(/^file:\/*/i, '').replace(/^\\+|^\/*/, '');
+    s = s.replace(/\\/g, '/');
+    return 'file://' + _encodePathSegments(s);
+  }
+
+  // createThumbCell: returns a <td> element with placeholder + Open link only
+  function createThumbCell(rawPath) {
+    const td = document.createElement('td');
+    const wrap = document.createElement('div'); wrap.className = 'detail-thumb-wrap';
+
+    const placeholder = document.createElement('div'); placeholder.className = 'placeholder-icon';
+    placeholder.innerHTML = '<i class="fa-solid fa-image"></i>';
+
+    const img = document.createElement('img'); img.className = 'detail-thumb';
+    img.alt = (rawPath||'').split(/[\\/]/).pop() || '';
+    img.style.display = 'none';
+
+    const fname = document.createElement('div'); fname.className = 'detail-thumb-filename';
+    fname.textContent = (rawPath||'').split(/[\\/]/).pop() || '';
+    fname.title = rawPath || '';
+
+    const openBtn = document.createElement('a'); openBtn.className = 'btn btn-sm btn-outline-secondary open-link';
+    openBtn.style.display = 'none'; openBtn.textContent = 'Open'; openBtn.target = '_blank'; openBtn.rel = 'noopener';
+
+    wrap.appendChild(placeholder); wrap.appendChild(img); wrap.appendChild(fname); wrap.appendChild(openBtn);
+    td.appendChild(wrap);
+
+    if(!rawPath || String(rawPath).trim() === '') {
+      placeholder.style.display = 'inline-flex';
+      return td;
+    }
+
+    const raw = String(rawPath).trim();
+    const fileUrl = _uncToFileUrl(raw);
+
+    function showOpenLink() {
+      placeholder.style.display = 'inline-flex';
+      img.style.display = 'none';
+      openBtn.href = fileUrl || raw;
+      openBtn.style.display = 'inline-block';
+
+      openBtn.onclick = function(e){
+        e.preventDefault();
+        // Try to open file:// directly (may be blocked by browser)
+        try {
+          const win = window.open(fileUrl, '_blank');
+          if (win) { try { win.focus(); } catch(_){}; return; }
+        } catch(err) { /* ignore */ }
+
+        // Fallback: copy to clipboard and notify user
+        const copyAndNotify = function(text) {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function(){
+              showTransientToast('File path copied to clipboard. Paste into Explorer or Run to open.');
+            }, function(){
+              prompt('Copy this path and paste into Explorer or Run to open:', text);
+            });
+          } else {
+            prompt('Copy this path and paste into Explorer or Run to open:', text);
+          }
+        };
+        copyAndNotify(fileUrl || raw);
+      };
+    }
+
+    // Only attempt inline image when page is file: (local open). For http(s) show Open link only.
+    if (location.protocol === 'file:') {
+      img.onload = function(){
+        placeholder.style.display = 'none';
+        img.style.display = 'inline-block';
+        openBtn.style.display = 'none';
+        img.onclick = function(e){ e.stopPropagation(); try{ if(window.showImagePreview) window.showImagePreview(raw); }catch(_){} };
+      };
+      img.onerror = function(){ showOpenLink(); };
+      try { img.src = fileUrl; } catch(e){ img.onerror(); }
+      setTimeout(function(){ if(img.complete && img.naturalWidth>0) return; if(img.style.display==='none') showOpenLink(); }, 1200);
+      return td;
+    }
+
+    // For http(s) pages: do not set img.src to UNC; show Open link fallback only.
+    showOpenLink();
+    return td;
+  }
+
+  // Expose global name expected by showDetailModal
+  if (typeof window.createThumbCell === 'undefined') window.createThumbCell = createThumbCell;
+
+  // transient toast helper
+  function showTransientToast(msg, timeout = 3000) {
+    try {
+      let t = document.getElementById('localPathToast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'localPathToast';
+        t.style.position = 'fixed';
+        t.style.right = '18px';
+        t.style.bottom = '18px';
+        t.style.zIndex = 99999;
+        t.style.background = 'rgba(17,24,39,0.95)';
+        t.style.color = '#fff';
+        t.style.padding = '10px 14px';
+        t.style.borderRadius = '8px';
+        t.style.boxShadow = '0 6px 18px rgba(2,6,23,0.2)';
+        t.style.fontSize = '13px';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.opacity = '1';
+      clearTimeout(t._hideTimer);
+      t._hideTimer = setTimeout(function(){ t.style.opacity = '0'; setTimeout(function(){ try{ t.remove(); }catch(_){} }, 300); }, timeout);
+    } catch(e){ /* ignore */ }
+  }
+
+  // -------------------------
+  // Normalize rows
+  // -------------------------
+  function normalizeRows(rows){
+    rows.forEach(r => {
+      if(typeof r !== 'object') return;
+      Object.keys(r).forEach(k => { if(typeof r[k] === 'string') r[k] = r[k].trim(); });
+      // CategoryGrp
+      let catVal = null;
+      const catCandidates = ['CategoryGrp','Category Group','Category_Grp','CategoryGrp '];
+      for(const c of catCandidates){ if(c in r && r[c] !== undefined && r[c] !== null && String(r[c]).trim() !== ''){ catVal = r[c]; break; } }
+      if(catVal === null){ for(const k of Object.keys(r)){ if(String(k).toLowerCase().includes('category')){ catVal = r[k]; break; } } }
+      r.CategoryGrp = parseIntSafe(catVal !== null ? catVal : r.CategoryGrp);
+      // Numeric weights
+      r.NetWt = parseFloatSafe(r.NetWt);
+      r.PureWt = parseFloatSafe(r.PureWt);
+      r.GrossWt = parseFloatSafe(r.GrossWt);
+      r.DWt = parseFloatSafe(r.DWt);
+      r.CSWt = parseFloatSafe(r.CSWt);
+      // Ord_ExpectedMetalPureWt
+      const altNames = ['Ord_ExpectedMetalPureWt','Ord Expected Metal PureWt','OrdExpectedMetalPureWt','Ord_Expected_Metal_PureWt','Ord_Expected_MetalPureWt'];
+      let foundVal = null;
+      for(const n of altNames){ if(n in r && r[n] !== undefined && r[n] !== null && String(r[n]).trim() !== ''){ foundVal = r[n]; break; } }
+      if(foundVal === null){ for(const k of Object.keys(r)){ const clean = String(k).replace(/\uFEFF/g,'').trim().replace(/\s+/g,' ').toLowerCase(); if(clean.includes('ord') && clean.includes('expected') && clean.includes('metal') && clean.includes('pure')){ foundVal = r[k]; break; } } }
+      r.Ord_ExpectedMetalPureWt = parseFloatSafe(foundVal !== null ? foundVal : r.Ord_ExpectedMetalPureWt);
+      if(r.STAGE && typeof r.STAGE === 'string') r.STAGE = r.STAGE.trim();
+    });
+    return rows;
+  }
+
+  // Filter helpers
+  function getMulti(sel){ const v = $(sel).val(); return v && v.length ? v : null; }
+  function multiMatch(selected, value){ if(!selected || selected.length===0) return true; return selected.indexOf((value||'').toString()) !== -1; }
+
+  window.applySlicersToRows = function(rows){
+    const cust = getMulti('#customerFilterInput');
+    const mfgBy = getMulti('#mfgByFilterInput');
+    const mfgName = getMulti('#mfgNameFilterInput');
+    const orderType = getMulti('#orderTypeFilterInput');
+    const channel = getMulti('#channelFilterInput');
+    const stageSel = getMulti('#stageFilterInput');
+    const po30 = getMulti('#po30FilterInput');
+    const mtl40 = getMulti('#mtl40FilterInput');
+
+    return (rows || []).filter(r => {
+      if(!multiMatch(cust, r.CustomerCode)) return false;
+      if(!multiMatch(mfgBy, r['MFG-BY'])) return false;
+      if(!multiMatch(mfgName, r['MFG-NAME'])) return false;
+      if(!multiMatch(orderType, r['ORDER TYPE'])) return false;
+      if(!multiMatch(channel, r['ORD-CHANNEL'])) return false;
+      if(!multiMatch(stageSel, r['STAGE'])) return false;
+      if(!multiMatch(po30, r['PO30+'])) return false;
+      if(!multiMatch(mtl40, r['MTL40+'])) return false;
+      return true;
+    });
+  };
+
+  // Chart helpers
+  function prepareCanvas(canvas){
+    if(!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.max(window.devicePixelRatio || 1, 1);
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return ctx;
+  }
+
+  function renderGroupedChart(rows, groupCol, label, canvasId, chartType, aggType, valueCol, topN){
+    const canvas = document.getElementById(canvasId);
+    if(!canvas) return;
+    const parent = canvas.parentNode;
+    const existingMsg = parent.querySelector('.nodata-msg'); if (existingMsg) existingMsg.remove();
+    if (!rows || rows.length === 0) {
+      const div = document.createElement('div'); div.className='nodata-msg'; div.style.padding='18px'; div.style.color=getComputedStyle(document.body).getPropertyValue('--muted'); div.textContent='No data for current filters'; parent.appendChild(div);
+      try { if(window.charts && window.charts[canvasId]) { window.charts[canvasId].destroy(); delete window.charts[canvasId]; } } catch(e){}
+      return;
+    }
+
+    const groups = {};
+    rows.forEach(r => {
+      const key = (r[groupCol] || 'Unknown').toString();
+      if(!key) return;
+      if(aggType === 'count') groups[key] = (groups[key]||0) + 1;
+      else if(aggType === 'sum') groups[key] = (groups[key]||0) + parseFloatSafe(r[valueCol]);
+    });
+
+    const entries = Object.keys(groups).map(k => ({ k, v: groups[k] }));
+    if (groupCol === 'STAGE') entries.sort((a,b) => a.k.localeCompare(b.k)); else entries.sort((a,b) => b.v - a.v);
+    const sliced = (typeof topN === 'number') ? entries.slice(0, topN) : entries;
+    const labels = sliced.map(e => e.k);
+    const data = sliced.map(e => e.v);
+
+    try { if(window.charts && window.charts[canvasId]) { window.charts[canvasId].destroy(); delete window.charts[canvasId]; } } catch(e){}
+
+    prepareCanvas(canvas);
+    const ctx = canvas.getContext('2d');
+    try {
+      window.charts = window.charts || {};
+      window.charts[canvasId] = new Chart(ctx, {
+        type: chartType,
+        data: { labels, datasets: [{ label, data, backgroundColor: labels.map((_,i)=>palette[i%palette.length]), borderColor: labels.map((_,i)=>palette[i%palette.length]), borderWidth:1 }] },
+        options: { responsive:false, maintainAspectRatio:false, plugins:{ legend:{ display: chartType==='pie' } }, scales: chartType==='pie' ? {} : { y:{ beginAtZero:true } } }
+      });
+    } catch(e){
+      console.warn('Chart render failed', e);
+    }
+  }
+
+  function renderDwVsCs(rows, canvasId, topN){
+    const canvas = document.getElementById(canvasId);
+    if(!canvas) return;
+    const parent = canvas.parentNode;
+    const existingMsg = parent.querySelector('.nodata-msg'); if (existingMsg) existingMsg.remove();
+    if (!rows || rows.length === 0) {
+      const div = document.createElement('div'); div.className='nodata-msg'; div.style.padding='18px'; div.style.color=getComputedStyle(document.body).getPropertyValue('--muted'); div.textContent='No data for current filters'; parent.appendChild(div);
+      try { if(window.charts && window.charts[canvasId]) { window.charts[canvasId].destroy(); delete window.charts[canvasId]; } } catch(e){}
+      return;
+    }
+    const map = {};
+    rows.forEach(r => {
+      const brand = (r.BrandName || 'Unknown').toString();
+      map[brand] = map[brand] || { DWt:0, CSWt:0 };
+      map[brand].DWt += parseFloatSafe(r.DWt);
+      map[brand].CSWt += parseFloatSafe(r.CSWt);
+    });
+    const entries = Object.keys(map).map(k => ({ k, DWt: map[k].DWt, CSWt: map[k].CSWt }));
+    entries.sort((a,b) => (b.DWt + b.CSWt) - (a.DWt + a.CSWt));
+    const sliced = (typeof topN === 'number') ? entries.slice(0, topN) : entries;
+    const labels = sliced.map(e => e.k);
+    const dw = sliced.map(e => e.DWt);
+    const cs = sliced.map(e => e.CSWt);
+
+    try { if(window.charts && window.charts[canvasId]) { window.charts[canvasId].destroy(); delete window.charts[canvasId]; } } catch(e){}
+
+    prepareCanvas(canvas);
+    const ctx = canvas.getContext('2d');
+    try {
+      window.charts = window.charts || {};
+      window.charts[canvasId] = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label:'DWt', data:dw, backgroundColor:palette[0] }, { label:'CSWt', data:cs, backgroundColor:palette[1] }] },
+        options: { responsive:false, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true } } }
+      });
+    } catch(e){
+      console.warn('Chart render failed', e);
+    }
+  }
+
+  // Animate numeric KPI
+  function animateValue(id, start, end, decimals=0, duration=600, suffix=''){
+    const el = document.getElementById(id); if(!el) return;
+    const startTime = performance.now();
+    const from = Number(start) || 0;
+    const to = Number(end) || 0;
+    const step = (now) => {
+      const progress = Math.min((now - startTime) / duration, 1);
+      const value = from + (to - from) * progress;
+      el.textContent = (decimals === 0 ? formatInt(Math.round(value)) : formatNumber(value,decimals)) + (suffix || '');
+      if(progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+
+  // Render KPIs (Metal KPI special handling)
+  function renderKPIs(rows){
+    const totalOrders = rows.reduce((s, r) => s + parseIntSafe(r.CategoryGrp), 0);
+    const totalNet = rows.reduce((s, r) => s + parseFloatSafe(r.NetWt), 0);
+    const totalPure = rows.reduce((s, r) => s + parseFloatSafe(r.PureWt), 0);
+    const totalDWt = rows.reduce((s, r) => s + parseFloatSafe(r.DWt), 0);
+    const totalCSWt = rows.reduce((s, r) => s + parseFloatSafe(r.CSWt), 0);
+
+    const stageSel = getMulti('#stageFilterInput');
+    let metalRows = rows;
+    if(!stageSel || stageSel.length === 0){
+      metalRows = rows.filter(r => DEFAULT_METAL_STAGES.indexOf((r.STAGE||'').toString()) !== -1);
+    } else {
+      metalRows = rows;
+    }
+
+    if(window.metalQuickExcludeActive){
+      metalRows = metalRows.filter(r => {
+        const cust = (r.CustomerCode || '').toString().trim().toLowerCase();
+        const ord = (r['ORDER TYPE'] || r.OrderType || '').toString().trim().toLowerCase();
+        if(METAL_EXCLUDE_CUSTOMERS.indexOf(cust) !== -1) return false;
+        if(METAL_EXCLUDE_ORDER_TYPES.indexOf(ord) !== -1) return false;
+        return true;
+      });
+    }
+
+    const baseMetal = metalRows.reduce((s, r) => s + parseFloatSafe(r.Ord_ExpectedMetalPureWt), 0);
+    const metalPlus25 = baseMetal * 1.25;
+
+    animateValue('kpiOrders', parseFloatSafe(document.getElementById('kpiOrders').textContent.replace(/,/g,'')) || 0, totalOrders, 0, 600, '');
+    animateValue('kpiNetWt', parseFloatSafe((document.getElementById('kpiNetWt').textContent||'0').replace(/[^0-9.\-]/g,'')) || 0, totalNet, 2, 600, ' g');
+    animateValue('kpiNetWtUnits', parseFloatSafe((document.getElementById('kpiNetWtUnits').textContent||'0').replace(/[^0-9.\-]/g,'')) || 0, totalNet/1000, 3, 600, ' kg');
+    animateValue('kpiPureWt', parseFloatSafe((document.getElementById('kpiPureWt').textContent||'0').replace(/[^0-9.\-]/g,'')) || 0, totalPure, 2, 600, ' g');
+    animateValue('kpiPureWtUnits', parseFloatSafe((document.getElementById('kpiPureWtUnits').textContent||'0').replace(/[^0-9.\-]/g,'')) || 0, totalPure/1000, 3, 600, ' kg');
+    animateValue('kpiDWt', parseFloatSafe(document.getElementById('kpiDWt').textContent.replace(/,/g,'')) || 0, totalDWt, 2, 600, '');
+    animateValue('kpiCSWt', parseFloatSafe(document.getElementById('kpiCSWt').textContent.replace(/,/g,'')) || 0, totalCSWt, 2, 600, '');
+
+    const metalEl = document.getElementById('kpiMetalPureWt');
+    const metalSub = document.getElementById('kpiMetalPureWtSub');
+    if(metalEl){
+      metalEl.textContent = formatNumber(baseMetal,2);
+      const rowsCount = metalRows.length;
+      const quickNote = window.metalQuickExcludeActive ? '<div style="color:#b45309;font-weight:600;margin-top:6px">Quick-exclude active</div>' : '';
+      const popHtml =
+        '<div style="line-height:1.35">' +
+        '<div><strong>Base (applied stages):</strong> ' + formatNumber(baseMetal,2) + '</div>' +
+        '<div><strong>+25%:</strong> ' + formatNumber(metalPlus25,2) + '</div>' +
+        '<div style="margin-top:6px;color:#6b7280;font-size:12px">Rows used: ' + rowsCount + '</div>' +
+        quickNote +
+        '</div>';
+      metalEl.setAttribute('data-bs-content', popHtml);
+    }
+    if(metalSub){
+      metalSub.textContent = window.metalQuickExcludeActive ? 'Filtered: excludes s017, s145 & ORDER TYPE stock' : ( (!stageSel || stageSel.length===0) ? 'Default: 1_ISS & 2_CAD OK' : 'All selected stages' );
+    }
+  }
+
+  // Popover refresh
+  function refreshMetalPopover(){
+    const el = document.getElementById('kpiMetalPureWt');
+    if(!el) return;
+    try { const inst = bootstrap.Popover.getInstance(el); if(inst) inst.dispose(); } catch(e){}
+    new bootstrap.Popover(el, { container: 'body', html: true, trigger: 'hover focus', placement: 'bottom', content: function(){ return el.getAttribute('data-bs-content') || ''; } });
+  }
+
+  // Pivot builder & renderer (with totals)
+  function buildPivotMulti(rows, rowField, colField, metrics) {
+    const rowKeys = new Set(); const colKeys = new Set(); const table = {};
+    rows.forEach(r => {
+      const rowKey = (r[rowField] || 'Unknown').toString();
+      const colKey = (r[colField] || 'Unknown').toString();
+      rowKeys.add(rowKey); colKeys.add(colKey);
+      table[rowKey] = table[rowKey] || {}; table[rowKey][colKey] = table[rowKey][colKey] || {};
+      metrics.forEach(m => {
+        const parser = m.parser || (m.type === 'sum' ? parseFloatSafe : v => 0);
+        const v = parser(r[m.id]);
+        table[rowKey][colKey][m.id] = (table[rowKey][colKey][m.id] || 0) + v;
+      });
+    });
+    const sortedCols = Array.from(colKeys).sort((a,b)=> a.localeCompare(b));
+    const sortedRows = Array.from(rowKeys).sort((a,b)=> a.localeCompare(b));
+    return { table, rows: sortedRows, cols: sortedCols, metrics };
+  }
+
+  function renderPivotHtmlMulti(pivot, containerId, formats) {
+    const { table, rows, cols, metrics } = pivot;
+    const container = document.getElementById(containerId);
+    if (!rows || rows.length === 0) { container.innerHTML = '<div style="padding:18px;color:#6b7280;text-align:center">No data</div>'; return; }
+
+    let html = '<div style="width:100%;overflow:auto"><table class="pivot-table table table-striped table-hover"><thead>';
+    html += '<tr><th>Row / Stage</th>';
+    cols.forEach(c => html += `<th style="text-align:center">${escapeHtml(c)}</th>`);
+    html += `<th style="text-align:center">Total</th></tr>`;
+    html += '</thead><tbody>';
+    rows.forEach(rk => {
+      html += `<tr><td class="pivot-row-header">${escapeHtml(rk)}</td>`;
+      let rowTotal = 0;
+      cols.forEach(ck => {
+        const cell = (table[rk] && table[rk][ck]) ? table[rk][ck] : {};
+        const v = cell[metrics[0].id] || 0;
+        rowTotal += v;
+        const formatted = (formats && formats[metrics[0].id]) ? formats[metrics[0].id](v) : formatNumber(v, (metrics[0].type === 'sum' ? 2 : 0));
+        html += `<td style="text-align:right">${formatted}</td>`;
+      });
+      const formattedTotal = (formats && formats[metrics[0].id]) ? formats[metrics[0].id](rowTotal) : formatNumber(rowTotal, (metrics[0].type === 'sum' ? 2 : 0));
+      html += `<td style="text-align:right">${formattedTotal}</td>`;
+      html += `</tr>`;
+    });
+
+    // Column totals and grand total
+    html += '<tr style="font-weight:700;background:rgba(0,0,0,0.02)"><td>Total</td>';
+    let grandTotal = 0;
+    cols.forEach(ck => {
+      let colSum = 0;
+      rows.forEach(rk => { colSum += (table[rk] && table[rk][ck] && table[rk][ck][metrics[0].id]) ? table[rk][ck][metrics[0].id] : 0; });
+      grandTotal += colSum;
+      const formatted = (formats && formats[metrics[0].id]) ? formats[metrics[0].id](colSum) : formatNumber(colSum, (metrics[0].type === 'sum' ? 2 : 0));
+      html += `<td style="text-align:right">${formatted}</td>`;
+    });
+    const formattedGrand = (formats && formats[metrics[0].id]) ? formats[metrics[0].id](grandTotal) : formatNumber(grandTotal, (metrics[0].type === 'sum' ? 2 : 0));
+    html += `<td style="text-align:right">${formattedGrand}</td></tr>`;
+
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+  }
+
+  function renderSelectedSummaryView(){
+    const view = document.getElementById('summarySelector').value;
+    const metric = document.getElementById('metricSelector').value;
+    const rows = window.getActiveFilteredRows();
+    const metrics = [];
+    if(metric === 'CategoryGrp') metrics.push({ id: 'CategoryGrp', label: 'CatGrp (sum)', type: 'sum', parser: parseIntSafe });
+    else if(metric === 'NetWt') metrics.push({ id: 'NetWt', label: 'NetWt', type: 'sum', parser: parseFloatSafe });
+    else if(metric === 'CSWt') metrics.push({ id: 'CSWt', label: 'CSWt', type: 'sum', parser: parseFloatSafe });
+    else if(metric === 'DWt') metrics.push({ id: 'DWt', label: 'DWt', type: 'sum', parser: parseFloatSafe });
+    const formats = {}; formats[metrics[0].id] = v => (metrics[0].id === 'CategoryGrp' ? formatInt(Math.round(v)) : formatNumber(v,2));
+    const rowField = view === 'customer' ? 'CustomerCode' : 'MFG-NAME';
+    const pivot = buildPivotMulti(rows, rowField, 'STAGE', metrics);
+    renderPivotHtmlMulti(pivot, 'pivotContainer', formats);
+    attachPivotRowClicks();
+  }
+
+  function attachPivotRowClicks() {
+    $('#pivotContainer .pivot-row-header').off('click').on('click', function() {
+      const rowValue = $(this).text().trim();
+      const view = document.getElementById('summarySelector').value;
+      if(view === 'customer') showDetailModal('CustomerCode', rowValue, true);
+      else showDetailModal('MFG-NAME', rowValue, true);
+    });
+  }
+
+  // Detail modal
+  window._detailRowsForExport = [];
+  window._detailColsForExport = [];
+  function showDetailModal(field, value, defaultCategoryFilter = true){
+    try {
+      const allRows = window.getActiveFilteredRows();
+      let filtered = allRows.filter(r => (r[field] || '').toString() === value);
+      if(defaultCategoryFilter) filtered = filtered.filter(r => (r.CategoryGrp === 1 || String(r.CategoryGrp).trim() === '1'));
+      window._detailRowsForExport = filtered.slice();
+      window._detailColsForExport = filtered.length ? Object.keys(filtered[0]) : [];
+      const titleEl = document.getElementById('detailModalTitle');
+      const subtitleEl = document.getElementById('detailModalSubtitle');
+      if(titleEl) titleEl.textContent = `${field}: ${value} — ${filtered.length} rows`;
+      if(subtitleEl) subtitleEl.textContent = defaultCategoryFilter ? 'Filtered: excludes s017, s145 & ORDER TYPE stock' : 'Showing all CategoryGrp values';
+      const wrap = document.getElementById('detailTableWrap');
+      const topScroll = document.getElementById('detailTopScroll');
+      const topInner = document.getElementById('detailTopScrollInner');
+      if(!wrap) return;
+      if(filtered.length === 0){
+        wrap.innerHTML = '<div style="padding:18px;color:#6b7280;text-align:center">No details available</div>';
+        topScroll.style.display = 'none';
+      } else {
+        // Insert thumbnail column next to IMAGE_PATH (we keep column but thumbnails are placeholders; Open button present)
+        const cols = window._detailColsForExport.slice(); // copy
+        const imgColIndex = cols.findIndex(c => c === 'IMAGE_PATH');
+        if(imgColIndex !== -1){
+          cols.splice(imgColIndex + 1, 0, 'IMAGE_THUMB');
+        }
+
+        const table = document.createElement('table');
+        table.className = 'detail-table comfortable';
+        const thead = document.createElement('thead');
+        const thr = document.createElement('tr');
+        cols.forEach(c => { const th = document.createElement('th'); th.textContent = c; thr.appendChild(th); });
+        thead.appendChild(thr); table.appendChild(thead);
+        const tbody = document.createElement('tbody');
+        filtered.forEach(r => {
+          const tr = document.createElement('tr');
+          // iterate original cols and insert thumb cell when needed
+          for(let i=0;i<window._detailColsForExport.length;i++){
+            const c = window._detailColsForExport[i];
+            const td = document.createElement('td');
+            const val = r[c] === undefined || r[c] === null ? '' : r[c];
+            td.textContent = val;
+            tr.appendChild(td);
+            // if this column is IMAGE_PATH and we added IMAGE_THUMB, append thumb cell
+            if(c === 'IMAGE_PATH' && imgColIndex !== -1){
+              const thumbTd = createThumbCell(val);
+              tr.appendChild(thumbTd);
+            }
+          }
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        wrap.innerHTML = '';
+        wrap.appendChild(table);
+
+        setTimeout(function(){
+          const tableEl = wrap.querySelector('table');
+          if(!tableEl) { topScroll.style.display = 'none'; return; }
+          topInner.style.width = tableEl.scrollWidth + 'px';
+          topScroll.style.display = (tableEl.scrollWidth > wrap.clientWidth) ? 'block' : 'none';
+          topScroll.onscroll = function(){ wrap.scrollLeft = topScroll.scrollLeft; };
+          wrap.onscroll = function(){ topScroll.scrollLeft = wrap.scrollLeft; };
+        }, 40);
+      }
+
+      const modalEl = document.getElementById('detailModal');
+
+      // Ensure modal element is a child of <body> to avoid stacking-context issues
+      try { if(modalEl && modalEl.parentNode !== document.body) document.body.appendChild(modalEl); } catch(e){}
+
+      // Show modal using Bootstrap when available, otherwise use a safe fallback.
+      let modalInstance = null;
+      if (window.bootstrap && typeof bootstrap.Modal === 'function') {
+        try {
+          modalInstance = new bootstrap.Modal(modalEl, { backdrop: true });
+          modalInstance.show();
+        } catch (e) {
+          console.warn('Bootstrap modal show failed, falling back', e);
+        }
+      }
+
+      // Fallback: manually show modal and create backdrop if Bootstrap not present or failed
+      if (!modalInstance) {
+        try {
+          modalEl.classList.add('show');
+          modalEl.style.display = 'block';
+          modalEl.setAttribute('aria-modal', 'true');
+          modalEl.removeAttribute('aria-hidden');
+
+          if (!document.querySelector('.custom-modal-backdrop')) {
+            const bd = document.createElement('div');
+            bd.className = 'modal-backdrop show custom-modal-backdrop';
+            bd.style.zIndex = '1150';
+            document.body.appendChild(bd);
+            bd.addEventListener('click', function(){
+              // clicking backdrop closes fallback modal
+              modalEl.classList.remove('show'); modalEl.style.display = 'none';
+              try { bd.remove(); } catch(_){}
+              document.body.classList.remove('sidebar-hidden-for-modal');
+            });
+          }
+        } catch(e){ console.warn('fallback modal show error', e); }
+      }
+
+      const breakpoint = 1000;
+      if(window.innerWidth <= breakpoint) document.body.classList.add('sidebar-hidden-for-modal');
+
+      const cb = document.getElementById('detailFilterCat1');
+      if(cb){
+        cb.onchange = null;
+        cb.onchange = function(){
+          const checked = cb.checked;
+          let newFiltered = allRows.filter(r => (r[field] || '').toString() === value);
+          if(checked) newFiltered = newFiltered.filter(r => (r.CategoryGrp === 1 || String(r.CategoryGrp).trim() === '1'));
+          window._detailRowsForExport = newFiltered.slice();
+          window._detailColsForExport = newFiltered.length ? Object.keys(newFiltered[0]) : [];
+          if(subtitleEl) subtitleEl.textContent = checked ? 'Filtered: excludes s017, s145 & ORDER TYPE stock' : 'Showing all CategoryGrp values';
+          if(titleEl) titleEl.textContent = `${field}: ${value} — ${newFiltered.length} rows`;
+          const wrapInner = document.getElementById('detailTableWrap');
+          if(!wrapInner) return;
+          if(newFiltered.length === 0){ wrapInner.innerHTML = '<div style="padding:18px;color:#6b7280;text-align:center">No details available</div>'; topScroll.style.display = 'none'; return; }
+
+          // rebuild columns with thumbnail column if IMAGE_PATH exists
+          const cols = window._detailColsForExport.slice();
+          const imgColIndex2 = cols.findIndex(c => c === 'IMAGE_PATH');
+          if(imgColIndex2 !== -1) cols.splice(imgColIndex2 + 1, 0, 'IMAGE_THUMB');
+
+          const table = document.createElement('table'); table.className = document.querySelector('.detail-table') ? document.querySelector('.detail-table').className : 'detail-table comfortable';
+          const thead = document.createElement('thead'); const thr = document.createElement('tr');
+          cols.forEach(c => { const th = document.createElement('th'); th.textContent = c; thr.appendChild(th); });
+          thead.appendChild(thr); table.appendChild(thead);
+          const tbody = document.createElement('tbody');
+          newFiltered.forEach(r => {
+            const tr = document.createElement('tr');
+            for(let i=0;i<window._detailColsForExport.length;i++){
+              const c = window._detailColsForExport[i];
+              const td = document.createElement('td');
+              td.textContent = r[c] === undefined || r[c] === null ? '' : r[c];
+              tr.appendChild(td);
+              if(c === 'IMAGE_PATH' && imgColIndex2 !== -1){
+                const thumbTd = createThumbCell(r[c]);
+                tr.appendChild(thumbTd);
+              }
+            }
+            tbody.appendChild(tr);
+          });
+          table.appendChild(tbody);
+          wrapInner.innerHTML = ''; wrapInner.appendChild(table);
+          setTimeout(function(){
+            const tableEl = wrapInner.querySelector('table');
+            if(!tableEl) { topScroll.style.display = 'none'; return; }
+            topInner.style.width = tableEl.scrollWidth + 'px';
+            topScroll.style.display = (tableEl.scrollWidth > wrapInner.clientWidth) ? 'block' : 'none';
+            topScroll.onscroll = function(){ wrapInner.scrollLeft = topScroll.scrollLeft; };
+            wrapInner.onscroll = function(){ topScroll.scrollLeft = wrapInner.scrollLeft; };
+          }, 40);
+        };
+      }
+
+      // Density toggle
+      const btnComfort = document.getElementById('densityComfort');
+      const btnCompact = document.getElementById('densityCompact');
+      function setDensity(mode){
+        const tableEl = document.querySelector('#detailTableWrap table.detail-table');
+        if(!tableEl) return;
+        tableEl.classList.remove('compact','comfortable');
+        if(mode === 'compact'){ tableEl.classList.add('compact'); btnCompact.classList.add('active'); btnComfort.classList.remove('active'); }
+        else { tableEl.classList.add('comfortable'); btnComfort.classList.add('active'); btnCompact.classList.remove('active'); }
+        setTimeout(function(){
+          const tableEl2 = document.querySelector('#detailTableWrap table.detail-table');
+          if(!tableEl2) return;
+          document.getElementById('detailTopScrollInner').style.width = tableEl2.scrollWidth + 'px';
+          document.getElementById('detailTopScroll').style.display = (tableEl2.scrollWidth > document.getElementById('detailTableWrap').clientWidth) ? 'block' : 'none';
+        }, 40);
+      }
+      if(btnComfort && btnCompact){
+        btnComfort.onclick = function(){ setDensity('comfortable'); };
+        btnCompact.onclick = function(){ setDensity('compact'); };
+      }
+      setDensity('comfortable');
+
+      modalEl.addEventListener('hidden.bs.modal', function handler(){ document.body.classList.remove('sidebar-hidden-for-modal'); modalEl.removeEventListener('hidden.bs.modal', handler); });
+    } catch(err){
+      console.error('showDetailModal error', err);
+    }
+  }
+
+  // CSV download for detail modal
+  document.addEventListener('click', function(e){
+    if(!e.target) return;
+    if(e.target.id === 'downloadDetailCsv'){
+      const rows = window._detailRowsForExport || [];
+      const cols = window._detailColsForExport || (rows[0] ? Object.keys(rows[0]) : []);
+      if(!rows.length){ alert('No rows to export'); return; }
+      let csv = cols.map(c => '"' + (c||'').replace(/"/g,'""') + '"').join(',') + '\n';
+      rows.forEach(r => { const line = cols.map(c => '"' + (r[c] === undefined || r[c] === null ? '' : String(r[c]).replace(/"/g,'""')) + '"'); csv += line.join(',') + '\n'; });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'detail-preview.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }
+  });
+
+  // Populate filters
+  function populateGlobalFilters(){
+    const selectMap = {
+      '#customerFilterInput':'CustomerCode',
+      '#mfgByFilterInput':'MFG-BY',
+      '#mfgNameFilterInput':'MFG-NAME',
+      '#orderTypeFilterInput':'ORDER TYPE',
+      '#channelFilterInput':'ORD-CHANNEL',
+      '#stageFilterInput':'STAGE',
+      '#po30FilterInput':'PO30+',
+      '#mtl40FilterInput':'MTL40+'
+    };
+    const all = [...window.dataStore.wip];
+    Object.keys(selectMap).forEach(sel => {
+      const col = selectMap[sel];
+      const vals = all.map(r => (r && r[col] ? r[col] : '')).filter(v => v !== "");
+      const unique = Array.from(new Set(vals)).sort((a,b)=> a.toString().localeCompare(b.toString()));
+      const $sel = $(sel);
+      if(!$sel.length) return;
+      const prev = $sel.val();
+      $sel.empty();
+      unique.forEach(v => $sel.append(`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
+      if(prev && prev.length) $sel.val(prev.filter(v => unique.indexOf(v) !== -1));
+      else $sel.val([]);
+      const countId = {
+        '#customerFilterInput':'#custCount',
+        '#mfgByFilterInput':'#mfgByCount',
+        '#mfgNameFilterInput':'#mfgNameCount',
+        '#orderTypeFilterInput':'#orderTypeCount',
+        '#channelFilterInput':'#channelCount',
+        '#stageFilterInput':'#stageCount',
+        '#po30FilterInput':'#po30Count',
+        '#mtl40FilterInput':'#mtl40Count'
+      }[sel];
+      if(countId) $(countId).text(unique.length);
+    });
+  }
+
+  // Search helpers for filters
+  function setupSearchFilter(searchSel, selectSel){ $(searchSel).on('input', debounce(function(){ const q = $(this).val().toLowerCase().trim(); $(selectSel).find('option').each(function(){ const txt = $(this).text().toLowerCase(); $(this).toggle(txt.indexOf(q) !== -1); }); }, 120)); }
+  setupSearchFilter('#customerSearch','#customerFilterInput');
+  setupSearchFilter('#mfgBySearch','#mfgByFilterInput');
+  setupSearchFilter('#mfgNameSearch','#mfgNameFilterInput');
+  setupSearchFilter('#orderTypeSearch','#orderTypeFilterInput');
+  setupSearchFilter('#channelSearch','#channelFilterInput');
+  setupSearchFilter('#stageSearch','#stageFilterInput');
+  setupSearchFilter('#po30Search','#po30FilterInput');
+  setupSearchFilter('#mtl40Search','#mtl40FilterInput');
+
+  // Select-all / clear-all
+  $('.select-all').on('click', function(){ const t = $(this).data('target'); $(t + ' option:visible').prop('selected', true); $(t).trigger('change'); });
+  $('.clear-all').on('click', function(){ const t = $(this).data('target'); $(t + ' option').prop('selected', false); $(t).trigger('change'); });
+
+  // Clear filters (top and sidebar)
+  function clearAllFilters(){
+    $('#customerFilterInput,#mfgByFilterInput,#mfgNameFilterInput,#orderTypeFilterInput,#channelFilterInput,#stageFilterInput,#po30FilterInput,#mtl40FilterInput').each(function(){ $(this).val([]); $(this).trigger('change'); });
+    $('#customerSearch,#mfgBySearch,#mfgNameSearch,#orderTypeSearch,#channelSearch,#stageSearch,#po30Search,#mtl40Search').val('').trigger('input');
+    renderActiveTab();
+  }
+  $('#clearAllFiltersSidebar').on('click', clearAllFilters);
+  $('#clearAllTop').on('click', clearAllFilters);
+
+  // Wire filter change to re-render
+  $('#customerFilterInput,#mfgByFilterInput,#mfgNameFilterInput,#orderTypeFilterInput,#channelFilterInput,#stageFilterInput,#po30FilterInput,#mtl40FilterInput').on('change', debounce(renderActiveTab, 150));
+  $('#summarySelector,#metricSelector').on('change', function(){ renderSelectedSummaryView(); });
+
+  // Pivot controls
+  let pivotCollapsed = false;
+  $('#togglePivot').on('click', function(){
+    pivotCollapsed = !pivotCollapsed;
+    const btn = $(this);
+    if(pivotCollapsed){ $('#pivotContainer').hide(); btn.text('Expand'); } else { $('#pivotContainer').show(); btn.text('Collapse'); }
+  });
+  $('#downloadPivot').on('click', function(){
+    const table = document.querySelector('#pivotContainer table');
+    if(!table){ alert('No pivot data to export'); return; }
+    let csv = '';
+    for(const row of table.querySelectorAll('tr')){
+      const cols = Array.from(row.querySelectorAll('th,td')).map(td => `"${(td.textContent||'').replace(/"/g,'""')}"`);
+      csv += cols.join(',') + '\n';
+    }
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'pivot-summary.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  });
+
+  // CSV loading
+  function loadCsvFromPath(path, key){
+    const bust = '?v=' + Date.now();
+    Papa.parse(path + bust, { download:true, header:true, skipEmptyLines:true, complete:function(res){
+      const normalized = normalizeRows(res.data);
+      window.dataStore[key] = normalized;
+      populateGlobalFilters();
+      renderActiveTab();
+      console.log('Auto-loaded', key, 'rows:', normalized.length);
+    }, error:function(err){ console.warn('PapaParse error for', path, err); }});
+  }
+
+  // Active dataset helpers
+  window.getActiveDataKey = function(){ return 'wip'; };
+  window.getActiveFilteredRows = function(){
+    try {
+      const key = window.getActiveDataKey();
+      const rows = (window.dataStore && window.dataStore[key]) ? window.dataStore[key] : [];
+      return window.applySlicersToRows ? window.applySlicersToRows(rows) : rows;
+    } catch(e){
+      console.warn('getActiveFilteredRows fallback failed', e);
+      return (window.dataStore && window.dataStore.wip) ? window.dataStore.wip : [];
+    }
+  };
+
+  // Render functions for WIP
+  function renderWip(){
+    const rows = window.applySlicersToRows(window.dataStore.wip || []);
+    renderKPIs(rows);
+    renderGroupedChart(rows,'STAGE','Orders','ordersByStage','bar','count',null,20);
+    renderGroupedChart(rows,'STAGE','Diamond Weight','dwByStage','bar','sum','DWt',20);
+    renderGroupedChart(rows,'STAGE','Total Net Weight','netWtByStage','pie','sum','NetWt',12);
+    renderGroupedChart(rows,'CustomerCode','Orders','ordersByCustomerWip','bar','count',null,20);
+    renderDwVsCs(rows,'dwVsCsByBrand',12);
+  }
+
+  function renderActiveTab(){
+    renderWip();
+    try { renderSelectedSummaryView(); } catch(e){ console.warn('renderSelectedSummaryView error', e); }
+    refreshMetalPopover();
+  }
+
+  // Toggle metal quick-exclude
+  function toggleMetalQuick(){
+    window.metalQuickExcludeActive = !window.metalQuickExcludeActive;
+    const btn = document.getElementById('toggleMetalQuick');
+    const label = document.getElementById('toggleMetalLabel');
+    if(window.metalQuickExcludeActive){ btn.classList.add('active'); label.textContent = 'Quick exclude ON (Metal KPI)'; }
+    else { btn.classList.remove('active'); label.textContent = 'Apply quick exclude (Metal KPI)'; }
+    renderActiveTab();
+  }
+
+  // Modal show/hide handlers to hide sidebar on small screens
+  function onModalShow() {
+    try {
+      const sidebar = document.getElementById('filtersSidebar');
+      if(!sidebar) return;
+      if(window.innerWidth <= 1000) {
+        sidebar.classList.add('sidebar-hidden-for-modal');
+        document.body.classList.add('sidebar-hidden-for-modal');
+      }
+    } catch(e){ console.warn('modal show handler', e); }
+  }
+  function onModalHide() {
+    try {
+      const sidebar = document.getElementById('filtersSidebar');
+      if(!sidebar) return;
+      sidebar.classList.remove('sidebar-hidden-for-modal');
+      document.body.classList.remove('sidebar-hidden-for-modal');
+    } catch(e){ console.warn('modal hide handler', e); }
+  }
+
+  // Wire toggle button and initial actions
+  document.addEventListener('DOMContentLoaded', function(){
+    const btn = document.getElementById('toggleMetalQuick');
+    if(btn) btn.addEventListener('click', toggleMetalQuick);
+
+    // Attach modal handlers
+    const modalEl = document.getElementById('detailModal');
+    if(modalEl){
+      modalEl.addEventListener('show.bs.modal', onModalShow);
+      modalEl.addEventListener('shown.bs.modal', onModalShow);
+      modalEl.addEventListener('hide.bs.modal', onModalHide);
+      modalEl.addEventListener('hidden.bs.modal', onModalHide);
+    }
+
+    // Handle window resize while modal is open
+    window.addEventListener('resize', function(){
+      const modalInstance = bootstrap.Modal.getInstance(modalEl);
+      const sidebar = document.getElementById('filtersSidebar');
+      if(!sidebar) return;
+      if(modalInstance && modalEl.classList.contains('show')) {
+        if(window.innerWidth <= 1000) sidebar.classList.add('sidebar-hidden-for-modal');
+        else sidebar.classList.remove('sidebar-hidden-for-modal');
+      }
+    });
+
+    // initial auto-load attempt
+    setTimeout(function(){ try { loadCsvFromPath('data/wip.csv','wip'); } catch(e){ /* ignore */ } }, 200);
+
+    // initial populate & render
+    setTimeout(function(){ try { populateGlobalFilters(); renderActiveTab(); } catch(e){ console.warn('initial render error', e); } }, 700);
+  });
+
+  // Keep filters & render in sync
+  let lastHash = '';
+  function computeHash() {
+    try {
+      const key = window.getActiveDataKey();
+      const rows = (window.dataStore && window.dataStore[key]) ? window.dataStore[key] : [];
+      const stageSel = ($('#stageFilterInput').val() || []).join(',');
+      const mtlSel = ($('#mtl40FilterInput').val() || []).join(',');
+      return key + '|' + rows.length + '|' + stageSel + '|' + mtlSel + '|' + (window.metalQuickExcludeActive ? 'Q1' : 'Q0');
+    } catch(e){ return ''; }
+  }
+  setInterval(function(){ const h = computeHash(); if(h !== lastHash){ lastHash = h; populateGlobalFilters(); renderActiveTab(); } }, 900);
+
+  // Expose toggle globally
+  window.toggleMetalQuick = toggleMetalQuick;
+
+})();
+  </script>
+</body>
+</html>
