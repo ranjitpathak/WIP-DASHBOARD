@@ -283,7 +283,7 @@
         <span id="toggleMetalLabel">Apply quick exclude (Metal KPI)</span>
       </button>
       <div class="metal-note">
-        <span class="note-text"><strong>Note:</strong> Excludes for Metal KPI calculation — CustomerCode: s017, s145; ORDER TYPE: stock</span>
+        <span class="note-text"><strong>Note:</strong> Excludes for Metal KPI calculation — CustomerCode: CUST001, CUST002; ORDER TYPE: STOCK</span>
       </div>
     </div>
 
@@ -394,7 +394,7 @@
         <div class="modal-header" style="align-items:center;gap:12px">
           <div style="display:flex;flex-direction:column">
             <h5 class="modal-title" id="detailModalTitle">Details</h5>
-            <small id="detailModalSubtitle" style="color:#6b7280;font-size:12px">Filtered: excludes s017, s145 & ORDER TYPE stock</small>
+            <small id="detailModalSubtitle" style="color:#6b7280;font-size:12px">Filtered: excludes CUST001, CUST002 & ORDER TYPE STOCK</small>
           </div>
 
           <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
@@ -467,8 +467,8 @@
 
   // Metal quick-exclude flag and exclusions
   window.metalQuickExcludeActive = false;
-  const METAL_EXCLUDE_CUSTOMERS = ['s017','s145'];
-  const METAL_EXCLUDE_ORDER_TYPES = ['stock'];
+  const METAL_EXCLUDE_CUSTOMERS = ['CUST001','CUST002'];
+  const METAL_EXCLUDE_ORDER_TYPES = ['STOCK'];
   const DEFAULT_METAL_STAGES = ['1_ISS','2_CAD OK'];
 
   // Utilities
@@ -821,7 +821,7 @@
       metalEl.setAttribute('data-bs-content', popHtml);
     }
     if(metalSub){
-      metalSub.textContent = window.metalQuickExcludeActive ? 'Filtered: excludes s017, s145 & ORDER TYPE stock' : ( (!stageSel || stageSel.length===0) ? 'Default: 1_ISS & 2_CAD OK' : 'All selected stages' );
+      metalSub.textContent = window.metalQuickExcludeActive ? 'Filtered: excludes CUST001, CUST002 & ORDER TYPE STOCK' : ( (!stageSel || stageSel.length===0) ? 'Default: 1_ISS & 2_CAD OK' : 'All selected stages' );
     }
   }
 
@@ -932,7 +932,7 @@
       const titleEl = document.getElementById('detailModalTitle');
       const subtitleEl = document.getElementById('detailModalSubtitle');
       if(titleEl) titleEl.textContent = `${field}: ${value} — ${filtered.length} rows`;
-      if(subtitleEl) subtitleEl.textContent = defaultCategoryFilter ? 'Filtered: excludes s017, s145 & ORDER TYPE stock' : 'Showing all CategoryGrp values';
+      if(subtitleEl) subtitleEl.textContent = defaultCategoryFilter ? 'Filtered: excludes CUST001, CUST002 & ORDER TYPE STOCK' : 'Showing all CategoryGrp values';
       const wrap = document.getElementById('detailTableWrap');
       const topScroll = document.getElementById('detailTopScroll');
       const topInner = document.getElementById('detailTopScrollInner');
@@ -1037,7 +1037,7 @@
           if(checked) newFiltered = newFiltered.filter(r => (r.CategoryGrp === 1 || String(r.CategoryGrp).trim() === '1'));
           window._detailRowsForExport = newFiltered.slice();
           window._detailColsForExport = newFiltered.length ? Object.keys(newFiltered[0]) : [];
-          if(subtitleEl) subtitleEl.textContent = checked ? 'Filtered: excludes s017, s145 & ORDER TYPE stock' : 'Showing all CategoryGrp values';
+          if(subtitleEl) subtitleEl.textContent = checked ? 'Filtered: excludes CUST001, CUST002 & ORDER TYPE STOCK' : 'Showing all CategoryGrp values';
           if(titleEl) titleEl.textContent = `${field}: ${value} — ${newFiltered.length} rows`;
           const wrapInner = document.getElementById('detailTableWrap');
           if(!wrapInner) return;
