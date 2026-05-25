@@ -404,7 +404,7 @@
         <div class="text">
           <div class="label">Ord Expected Metal PureWt</div>
           <div class="value" id="kpiMetalPureWt" data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-html="true" title="Metal PureWt breakdown">0</div>
-          <div class="sub" id="kpiMetalPureWtSub">Default: 1_ISS &amp; 2_CAD OK</div>
+          <div class="sub" id="kpiMetalPureWtSub">Default: SKETCH &amp; CAD </div>
         </div>
       </div>
     </div>
@@ -535,7 +535,7 @@
   window.metalQuickExcludeActive = false;
   const METAL_EXCLUDE_CUSTOMERS = ['CUST001','CUST002'];
   const METAL_EXCLUDE_ORDER_TYPES = ['STOCK'];
-  const DEFAULT_METAL_STAGES = ['1_ISS','2_CAD OK'];
+  const DEFAULT_METAL_STAGES = ['SKETCH','CAD'];
 
   // Utilities
   function parseFloatSafe(v){ if(v==null || v==='') return 0; const n = parseFloat(String(v).replace(/,/g,'')); return isNaN(n)?0:n; }
